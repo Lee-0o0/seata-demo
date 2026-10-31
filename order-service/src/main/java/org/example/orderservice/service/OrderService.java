@@ -33,10 +33,10 @@ public class OrderService {
         order.setQuantity(quantity);
         order.setCreatedAt(LocalDateTime.now().withNano(0));
         mapper.insert(order);
-        // SCA 通过 Feign 传播 XID，订单与库存作为 XA 分支统一提交或回滚。
+        // SCA 通过 Feign 传播 XID，订单与库存作为 AT 分支由全局事务统一协调。
         stockClient.deduct(productId, quantity);
 
-        if (exception){
+        if (Boolean.TRUE.equals(exception)) {
             throw new RuntimeException("模拟下单异常，检查库存是否回滚");
         }
         return order;

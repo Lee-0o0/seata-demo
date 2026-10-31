@@ -30,6 +30,11 @@
     </properties>
 
     <dependencies>
+        <!-- Seata 2.5 AT undo-log serialization uses Jackson 2; Boot 4 defaults to Jackson 3. -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc</artifactId>

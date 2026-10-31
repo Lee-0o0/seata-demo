@@ -1,6 +1,6 @@
 # Seata Demo
 
-当前包含库存服务 `stock-service` 和订单模块 `order-service`。已实现下单、订单查询及跨服务库存扣减，通过 OpenFeign 调用库存服务，并通过 SCA 接入 Seata XA 分布式事务。
+当前包含库存服务 `stock-service` 和订单模块 `order-service`。已实现下单、订单查询及跨服务库存扣减，通过 OpenFeign 调用库存服务，并通过 SCA 接入 Seata AT 分布式事务。
 
 ## 启动
 
@@ -86,12 +86,12 @@ curl http://localhost:8081/stocks/1
 
 ### 当前事务边界
 
-两个服务均启用 `seata.data-source-proxy-mode: XA`，订单入口使用 `@GlobalTransactional`，并保留各自的本地 `@Transactional`。SCA 自动通过 Feign 传播 XID，MySQL 的 XA 分支由 Seata 统一提交或回滚；XA 模式不需要 `undo_log` 表。
+两个服务均启用 `seata.data-source-proxy-mode: AT`，订单入口使用 `@GlobalTransactional`，并保留各自的本地 `@Transactional`。SCA 自动通过 Feign 传播 XID，AT 一阶段提交业务数据和回滚日志，二阶段由 Seata 决定完成提交或根据回滚日志补偿。两个业务库均在数据源代理创建前执行各自的 `undo-log.sql`，幂等创建 `undo_log` 表，重启应用即可补齐，无需清空数据库。
 
 Seata 默认使用 `127.0.0.1:8091`，通过 `SEATA_SERVER_ADDR` 可覆盖。事务分组为 `seata_demo_tx_group`，使用 file 注册和配置方式直连 TC。服务端配置位于 `seata-server/application.yml`，TC 会话通过 `seata-data` 数据卷持久化。Docker 将 TC 端口发布到 `127.0.0.1:8091`，供宿主机上的两个 Java 应用连接。当前 Compose 面向两个 Java 应用运行在宿主机的本地演示场景。
 
-XA 分支在全局事务完成前持有数据库锁，全局事务超时为 30 秒。接口暂不具备幂等性，不应自动重试结果未知的下单或扣减请求。
+AT 一阶段提交后释放数据库本地锁，并通过 Seata 全局锁协调写入；全局事务超时为 30 秒。接口暂不具备幂等性，不应自动重试结果未知的下单或扣减请求。
 
-当前固定 Connector/J 为 `8.4.0`，避免 Seata 2.5.0 的 XA 转换逻辑不支持 9.x 驱动。Docker 使用 `apache/seata-server:2.5.0`，与 SCA 引入的客户端版本保持一致；已通过容器健康检查和 XA 提交、回滚联调。
+当前固定 Connector/J 为 `8.4.0`，沿用此前已验证的驱动版本。Docker 使用 `apache/seata-server:2.5.0`，与 SCA 引入的客户端版本保持一致；已通过容器健康检查和 AT 提交、回滚联调。
 
-数据库、TC 和库存应用启动后，可运行 `python3 scripts/verify-xa.py` 验证。脚本会临时启动订单应用（18082 端口），测试成功提交、库存不足、商品不存在，以及库存 prepare 后响应失败的全局回滚；验证结束后停止临时订单应用。成功用例会保留一笔演示订单并扣减商品 2 的一件库存。
+数据库、TC 和库存应用启动后，可运行 `python3 scripts/verify-at.py` 验证。脚本会临时启动订单应用（18082 端口），测试成功提交、库存不足、商品不存在，以及库存已本地提交后响应失败的全局回滚；验证结束后停止临时订单应用。成功用例会保留一笔演示订单并扣减商品 2 的一件库存。
