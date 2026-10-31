@@ -1,5 +1,22 @@
 name: seata-demo
 services:
+  seata-server:
+    image: apache/seata-server:2.5.0
+    environment:
+      SEATA_IP: 127.0.0.1
+      SEATA_PORT: 8091
+      JAVA_OPT: -Dspring.config.location=file:/seata-server/conf/application.yml
+    ports:
+      - "127.0.0.1:8091:8091"
+    volumes:
+      - ./seata-server/application.yml:/seata-server/conf/application.yml:ro
+      - seata-data:/seata-server/sessionStore
+    healthcheck:
+      test: ["CMD-SHELL", "bash -c 'exec 3<>/dev/tcp/127.0.0.1/8091'"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 20s
   stock-mysql:
     image: mysql:8.4
     environment:
@@ -33,5 +50,6 @@ services:
       timeout: 5s
       retries: 30
 volumes:
+  seata-data:
   mysql-data:
   order-mysql-data:
