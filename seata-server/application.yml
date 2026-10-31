@@ -1,0 +1,21 @@
+server:
+  port: 8091
+spring:
+  application:
+    name: seata-server
+  main:
+    web-application-type: none
+logging:
+  file:
+    path: /root/logs/seata
+seata:
+  config:
+    type: file
+  registry:
+    type: file
+  server:
+    service-port: 8091
+  store:
+    mode: file
+    file:
+      dir: /seata-server/sessionStore
