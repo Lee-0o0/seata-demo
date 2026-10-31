@@ -1,0 +1,29 @@
+@stockUrl = http://localhost:8081
+@orderUrl = http://localhost:8082
+
+### 查询库存
+GET {{stockUrl}}/stocks/1
+
+### 创建订单：预期 201，并扣减一件库存
+POST {{orderUrl}}/orders
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "productId": 1,
+  "quantity": 1,
+  "exception": true
+}
+
+### 查询订单：将 1 换成创建订单返回的 id
+GET {{orderUrl}}/orders/1
+
+### 库存不足：预期 409，订单回滚
+POST {{orderUrl}}/orders
+Content-Type: application/json
+
+{
+  "userId": 1,
+  "productId": 1,
+  "quantity": 2147483647
+}

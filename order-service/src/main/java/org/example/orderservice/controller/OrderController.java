@@ -17,7 +17,8 @@ public class OrderController {
 
     @PostMapping
     public ResponseEntity<PurchaseOrder> create(@RequestBody CreateOrderRequest request) {
-        PurchaseOrder order = service.create(request.userId(), request.productId(), request.quantity());
+        PurchaseOrder order = service.create(
+                request.userId(), request.productId(), request.quantity(), request.exception());
         return ResponseEntity.created(URI.create("/orders/" + order.getId())).body(order);
     }
 
@@ -26,5 +27,5 @@ public class OrderController {
         return service.get(id);
     }
 
-    public record CreateOrderRequest(Long userId, Long productId, Integer quantity) {}
+    public record CreateOrderRequest(Long userId, Long productId, Integer quantity, Boolean exception) {}
 }

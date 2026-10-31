@@ -20,3 +20,19 @@ spring:
       encoding: UTF-8
 stock:
   service-url: ${STOCK_SERVICE_URL:http://127.0.0.1:8081}
+
+seata:
+  enabled: true
+  application-id: ${spring.application.name}
+  tx-service-group: seata_demo_tx_group
+  enable-auto-data-source-proxy: true
+  data-source-proxy-mode: XA
+  config:
+    type: file
+  registry:
+    type: file
+  service:
+    vgroup-mapping:
+      seata_demo_tx_group: default
+    grouplist:
+      default: ${SEATA_SERVER_ADDR:127.0.0.1:8091}

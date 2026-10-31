@@ -1,6 +1,7 @@
 package org.example.orderservice.service;
 
 import java.time.LocalDateTime;
+import org.apache.seata.spring.annotation.GlobalTransactional;
 import org.example.orderservice.client.StockClient;
 import org.example.orderservice.entity.PurchaseOrder;
 import org.example.orderservice.mapper.OrderMapper;
@@ -19,8 +20,9 @@ public class OrderService {
         this.stockClient = stockClient;
     }
 
+    @GlobalTransactional(name = "create-order", rollbackFor = Exception.class, timeoutMills = 30000)
     @Transactional
-    public PurchaseOrder create(Long userId, Long productId, Integer quantity) {
+    public PurchaseOrder create(Long userId, Long productId, Integer quantity, Boolean exception) {
         if (userId == null || userId <= 0 || productId == null || productId <= 0
                 || quantity == null || quantity <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户 ID、商品 ID 和数量必须大于 0");
@@ -31,9 +33,12 @@ public class OrderService {
         order.setQuantity(quantity);
         order.setCreatedAt(LocalDateTime.now().withNano(0));
         mapper.insert(order);
-        // 库存拒绝或调用异常时，异常向外传播以回滚本地订单。
-        // 本地事务无法撤销已经在库存服务提交的扣减。
+        // SCA 通过 Feign 传播 XID，订单与库存作为 XA 分支统一提交或回滚。
         stockClient.deduct(productId, quantity);
+
+        if (exception){
+            throw new RuntimeException("模拟下单异常，检查库存是否回滚");
+        }
         return order;
     }
 
