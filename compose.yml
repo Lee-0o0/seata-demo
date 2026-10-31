@@ -1,0 +1,37 @@
+name: seata-demo
+services:
+  stock-mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_local}
+      MYSQL_DATABASE: stock_db
+      MYSQL_USER: stock
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-stock_local}
+    ports:
+      - "127.0.0.1:${MYSQL_PORT:-3307}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_PASSWORD mysql -h 127.0.0.1 -u$$MYSQL_USER stock_db -e 'SELECT 1'"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+  order-mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${ORDER_MYSQL_ROOT_PASSWORD:-order_root_local}
+      MYSQL_DATABASE: order_db
+      MYSQL_USER: order_user
+      MYSQL_PASSWORD: ${ORDER_MYSQL_PASSWORD:-order_local}
+    ports:
+      - "127.0.0.1:${ORDER_MYSQL_PORT:-3308}:3306"
+    volumes:
+      - order-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_PASSWORD mysql -h 127.0.0.1 -u$$MYSQL_USER order_db -e 'SELECT 1'"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+volumes:
+  mysql-data:
+  order-mysql-data:
