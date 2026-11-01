@@ -1,6 +1,9 @@
 package org.example.orderservice.service;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
+import org.example.orderservice.client.AccountClient;
+import org.example.orderservice.mapper.ProductMapper;
 import org.apache.seata.spring.annotation.GlobalTransactional;
 import org.example.orderservice.client.StockClient;
 import org.example.orderservice.entity.PurchaseOrder;
@@ -15,7 +18,12 @@ public class OrderService {
     private final OrderMapper mapper;
     private final StockClient stockClient;
 
-    public OrderService(OrderMapper mapper, StockClient stockClient) {
+    private final AccountClient accountClient;
+    private final ProductMapper productMapper;
+
+    public OrderService(OrderMapper mapper, StockClient stockClient, AccountClient accountClient, ProductMapper productMapper) {
+        this.accountClient = accountClient;
+        this.productMapper = productMapper;
         this.mapper = mapper;
         this.stockClient = stockClient;
     }
@@ -27,7 +35,17 @@ public class OrderService {
                 || quantity == null || quantity <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "用户 ID、商品 ID 和数量必须大于 0");
         }
+        BigDecimal price = productMapper.price(productId);
+        if (price == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "商品不存在");
+        }
         PurchaseOrder order = new PurchaseOrder();
+        order.setUnitPrice(price);
+        BigDecimal totalAmount = price.multiply(BigDecimal.valueOf(quantity));
+        if (totalAmount.precision() > 19) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "订单总金额超出允许范围");
+        }
+        order.setTotalAmount(totalAmount);
         order.setUserId(userId);
         order.setProductId(productId);
         order.setQuantity(quantity);
@@ -35,9 +53,11 @@ public class OrderService {
         mapper.insert(order);
         // SCA 通过 Feign 传播 XID，订单与库存作为 AT 分支由全局事务统一协调。
         stockClient.deduct(productId, quantity);
+        // HTTP 入口在账户服务内调用本地 TCC Bean；这里只触发 Try。
+        accountClient.debit(order.getId(), userId, order.getTotalAmount());
 
         if (Boolean.TRUE.equals(exception)) {
-            throw new RuntimeException("模拟下单异常，检查库存是否回滚");
+            throw new RuntimeException("模拟下单异常，检查订单、库存与账户是否回滚");
         }
         return order;
     }

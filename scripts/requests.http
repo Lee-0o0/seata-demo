@@ -1,10 +1,14 @@
 @stockUrl = http://localhost:8081
 @orderUrl = http://localhost:8082
+@accountUrl = http://localhost:8083
 
 ### 查询库存
 GET {{stockUrl}}/stocks/1
 
-### 创建订单：预期 201，并扣减一件库存
+### 查询账户可用余额与冻结余额
+GET {{accountUrl}}/accounts/1
+
+### 创建订单：预期 201，库存 AT 扣减，账户 TCC 确认扣款
 POST {{orderUrl}}/orders
 Content-Type: application/json
 
@@ -15,10 +19,31 @@ Content-Type: application/json
   "exception": true
 }
 
-### 查询订单：将 1 换成创建订单返回的 id
+### 查询订单：将 1 换成创建订单返回的 id，包含成交单价与总金额
 GET {{orderUrl}}/orders/1
 
-### 库存不足：预期 409，订单回滚
+### Try 成功后模拟异常：预期 500，订单/库存回滚，账户取消冻结
+POST {{orderUrl}}/orders
+Content-Type: application/json
+
+{
+  "userId": 2,
+  "productId": 1,
+  "quantity": 100,
+  "exception": false
+}
+
+### 余额不足：用户 2 初始余额 1 元，预期 409，订单/库存回滚
+POST {{orderUrl}}/orders
+Content-Type: application/json
+
+{
+  "userId": 2,
+  "productId": 1,
+  "quantity": 1
+}
+
+### 库存不足：预期 409，订单回滚，不调用账户冻结
 POST {{orderUrl}}/orders
 Content-Type: application/json
 

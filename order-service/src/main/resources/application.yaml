@@ -7,6 +7,9 @@ spring:
     openfeign:
       client:
         config:
+          account-service:
+            connectTimeout: 3000
+            readTimeout: 5000
           stock-service:
             connectTimeout: 3000
             readTimeout: 5000
@@ -18,6 +21,8 @@ spring:
     init:
       mode: always
       encoding: UTF-8
+account:
+  service-url: ${ACCOUNT_SERVICE_URL:http://127.0.0.1:8083}
 stock:
   service-url: ${STOCK_SERVICE_URL:http://127.0.0.1:8081}
 

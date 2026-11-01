@@ -49,7 +49,24 @@ services:
       interval: 5s
       timeout: 5s
       retries: 30
+  account-mysql:
+    image: mysql:8.4
+    environment:
+      MYSQL_ROOT_PASSWORD: ${ACCOUNT_MYSQL_ROOT_PASSWORD:-account_root_local}
+      MYSQL_DATABASE: account_db
+      MYSQL_USER: account_user
+      MYSQL_PASSWORD: ${ACCOUNT_MYSQL_PASSWORD:-account_local}
+    ports:
+      - "127.0.0.1:${ACCOUNT_MYSQL_PORT:-3309}:3306"
+    volumes:
+      - account-mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_PASSWORD mysql -h 127.0.0.1 -u$$MYSQL_USER account_db -e 'SELECT 1'"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
 volumes:
+  account-mysql-data:
   seata-data:
   mysql-data:
   order-mysql-data:
