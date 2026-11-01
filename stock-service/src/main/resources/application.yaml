@@ -12,19 +12,3 @@ spring:
     url: "${DB_URL:jdbc:mysql://127.0.0.1:3307/stock_db?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&characterEncoding=UTF-8}"
     username: ${DB_USERNAME:stock}
     password: ${MYSQL_PASSWORD:stock_local}
-
-seata:
-  enabled: true
-  application-id: ${spring.application.name}
-  tx-service-group: seata_demo_tx_group
-  enable-auto-data-source-proxy: true
-  data-source-proxy-mode: AT
-  config:
-    type: file
-  registry:
-    type: file
-  service:
-    vgroup-mapping:
-      seata_demo_tx_group: default
-    grouplist:
-      default: ${SEATA_SERVER_ADDR:127.0.0.1:8091}
