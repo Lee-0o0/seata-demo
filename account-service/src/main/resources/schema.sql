@@ -1,8 +1,7 @@
 CREATE TABLE IF NOT EXISTS account (
     user_id BIGINT NOT NULL PRIMARY KEY,
     available_balance DECIMAL(19,2) NOT NULL,
-    frozen_balance DECIMAL(19,2) NOT NULL DEFAULT 0,
-    CONSTRAINT chk_account_balance CHECK (available_balance >= 0 AND frozen_balance >= 0)
+    CONSTRAINT chk_account_balance CHECK (available_balance >= 0)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE IF NOT EXISTS account_saga_operation (

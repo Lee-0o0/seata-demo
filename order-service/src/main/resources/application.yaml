@@ -19,6 +19,7 @@ spring:
     password: ${ORDER_MYSQL_PASSWORD:order_local}
   sql:
     init:
+      schema-locations: classpath:schema.sql,classpath:saga-schema.sql
       mode: always
       encoding: UTF-8
 account:
@@ -30,8 +31,7 @@ seata:
   enabled: true
   application-id: ${spring.application.name}
   tx-service-group: seata_demo_tx_group
-  enable-auto-data-source-proxy: true
-  data-source-proxy-mode: AT
+  enable-auto-data-source-proxy: false
   config:
     type: file
   registry:
@@ -41,3 +41,6 @@ seata:
       seata_demo_tx_group: default
     grouplist:
       default: ${SEATA_SERVER_ADDR:127.0.0.1:8091}
+
+saga:
+  recovery-delay-ms: 5000

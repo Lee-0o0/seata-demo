@@ -1,0 +1,160 @@
+{
+  "Name": "orderSaga",
+  "Version": "3.0.0",
+  "StartState": "CreateOrder",
+  "RecoverStrategy": "Compensate",
+  "States": {
+    "CreateOrder": {
+      "Type": "ServiceTask",
+      "ServiceName": "orderSagaActions",
+      "ServiceMethod": "createOrder",
+      "Input": [
+        "$.[requestId]",
+        "$.[userId]",
+        "$.[productId]",
+        "$.[quantity]",
+        "$.[unitPrice]",
+        "$.[totalAmount]",
+        "$.[simulateFailure]"
+      ],
+      "IsForUpdate": true,
+      "Status": {
+        "#root == true": "SU",
+        "$Exception{java.lang.Throwable}": "UN"
+      },
+      "Catch": [
+        {
+          "Exceptions": [
+            "java.lang.Throwable"
+          ],
+          "Next": "CompensationTrigger"
+        }
+      ],
+      "Next": "DeductStock",
+      "CompensateState": "CloseOrder"
+    },
+    "DeductStock": {
+      "Type": "ServiceTask",
+      "ServiceName": "orderSagaActions",
+      "ServiceMethod": "deductStock",
+      "Input": [
+        "$.[requestId]"
+      ],
+      "IsForUpdate": true,
+      "Status": {
+        "#root == true": "SU",
+        "$Exception{java.lang.Throwable}": "UN"
+      },
+      "Catch": [
+        {
+          "Exceptions": [
+            "java.lang.Throwable"
+          ],
+          "Next": "CompensationTrigger"
+        }
+      ],
+      "Next": "DebitAccount",
+      "CompensateState": "CompensateStock"
+    },
+    "DebitAccount": {
+      "Type": "ServiceTask",
+      "ServiceName": "orderSagaActions",
+      "ServiceMethod": "debitAccount",
+      "Input": [
+        "$.[requestId]"
+      ],
+      "IsForUpdate": true,
+      "Status": {
+        "#root == true": "SU",
+        "$Exception{java.lang.Throwable}": "UN"
+      },
+      "Catch": [
+        {
+          "Exceptions": [
+            "java.lang.Throwable"
+          ],
+          "Next": "CompensationTrigger"
+        }
+      ],
+      "Next": "ConfirmOrder",
+      "CompensateState": "CompensateAccount"
+    },
+    "CompensateStock": {
+      "Type": "ServiceTask",
+      "ServiceName": "orderSagaActions",
+      "ServiceMethod": "compensateStock",
+      "Input": [
+        "$.[requestId]"
+      ],
+      "Status": {
+        "#root == true": "SU",
+        "$Exception{java.lang.Throwable}": "UN"
+      }
+    },
+    "CompensateAccount": {
+      "Type": "ServiceTask",
+      "ServiceName": "orderSagaActions",
+      "ServiceMethod": "compensateAccount",
+      "Input": [
+        "$.[requestId]"
+      ],
+      "Status": {
+        "#root == true": "SU",
+        "$Exception{java.lang.Throwable}": "UN"
+      }
+    },
+    "CompensationTrigger": {
+      "Type": "CompensationTrigger",
+      "Next": "Fail"
+    },
+    "Succeed": {
+      "Type": "Succeed"
+    },
+    "Fail": {
+      "Type": "Fail",
+      "ErrorCode": "ORDER_FAILED",
+      "Message": "订单流程失败"
+    },
+    "ConfirmOrder": {
+      "Type": "ServiceTask",
+      "ServiceName": "orderSagaActions",
+      "ServiceMethod": "confirmOrder",
+      "Input": [
+        "$.[requestId]"
+      ],
+      "IsForUpdate": true,
+      "Status": {
+        "#root == true": "SU",
+        "$Exception{java.lang.Throwable}": "UN"
+      },
+      "Catch": [
+        {
+          "Exceptions": [
+            "java.lang.Throwable"
+          ],
+          "Next": "CompensationTrigger"
+        }
+      ],
+      "Next": "Succeed",
+      "CompensateState": "CloseOrder"
+    },
+    "CloseOrder": {
+      "Type": "ServiceTask",
+      "ServiceName": "orderSagaActions",
+      "ServiceMethod": "closeOrder",
+      "Input": [
+        "$.[requestId]",
+        "$.[userId]",
+        "$.[productId]",
+        "$.[quantity]",
+        "$.[unitPrice]",
+        "$.[totalAmount]",
+        "$.[simulateFailure]"
+      ],
+      "Status": {
+        "#root == true": "SU",
+        "$Exception{java.lang.Throwable}": "UN"
+      }
+    }
+  }
+}

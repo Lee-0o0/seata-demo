@@ -26,16 +26,10 @@
         <spring-cloud.version>2025.1.3</spring-cloud.version>
         <spring-cloud-alibaba.version>2025.1.0.0</spring-cloud-alibaba.version>
         <mybatis-plus.version>3.5.17</mybatis-plus.version>
-        <!-- Seata 2.5 XA uses Druid XA conversion, which does not support Connector/J 9.x. -->
         <mysql.version>8.4.0</mysql.version>
     </properties>
 
     <dependencies>
-        <!-- Seata 2.5 AT undo-log serialization uses Jackson 2; Boot 4 defaults to Jackson 3. -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webmvc</artifactId>

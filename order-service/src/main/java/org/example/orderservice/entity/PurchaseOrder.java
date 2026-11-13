@@ -6,6 +6,9 @@ import java.time.LocalDateTime;
 @Data
 public class PurchaseOrder {
     private Long id;
+    private String requestId;
+    private String status;
+    private Boolean simulateFailure;
     private Long userId;
     private Long productId;
     private Integer quantity;

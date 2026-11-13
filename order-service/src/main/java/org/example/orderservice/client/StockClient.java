@@ -1,34 +1,25 @@
 package org.example.orderservice.client;
 
-import feign.FeignException;
-import feign.RetryableException;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ResponseStatusException;
 
 @Component
 public class StockClient {
     private final StockFeignClient client;
-
-    public StockClient(StockFeignClient client) {
-        this.client = client;
-    }
-
-    public void deduct(long productId, int quantity) {
+    public StockClient(StockFeignClient client) { this.client = client; }
+    public void deduct(String operationId, long productId, int quantity) {
         try {
-            client.deduct(new StockFeignClient.DeductRequest(productId, quantity));
-        } catch (RetryableException e) {
-            // 超时结果可能未知，不自动重试扣减。
-            throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "库存服务不可用或请求超时", e);
-        } catch (FeignException e) {
-            int status = e.status();
-            if (status == 404) {
-                throw new ResponseStatusException(HttpStatus.NOT_FOUND, "商品库存不存在", e);
-            }
-            if (status == 409) {
-                throw new ResponseStatusException(HttpStatus.CONFLICT, "库存不足", e);
-            }
-            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "库存服务响应异常", e);
+            client.deduct(new StockFeignClient.DeductRequest(operationId, productId, quantity));
+        } catch (feign.FeignException failure) {
+            // Feign Request 不可序列化；Saga 日志仅保存可持久化的异常，不保留原异常对象。
+            throw new IllegalStateException("Stock service HTTP " + failure.status());
+        }
+    }
+    public void compensate(String operationId) {
+        try {
+            client.compensate(new StockFeignClient.CompensateRequest(operationId));
+        } catch (feign.FeignException failure) {
+            // Feign Request 不可序列化；Saga 日志仅保存可持久化的异常，不保留原异常对象。
+            throw new IllegalStateException("Stock service HTTP " + failure.status());
         }
     }
 }
